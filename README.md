@@ -1,1 +1,1 @@
-# openvas
+# Greenbone Vulnerability Manager (GVM) - Source Edition 
