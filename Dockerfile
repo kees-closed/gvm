@@ -11,6 +11,9 @@ ENV ospd_openvas_version="20.8.0"
 ENV gvmd_version="20.8.0"
 ENV gsa_version="20.8.0"
 
+RUN useradd --system greenbone
+RUN useradd --system gvm
+
 # Build gvm-libs
 RUN apt-get update && apt-get upgrade --assume-yes; \
         apt-get install --assume-yes \
@@ -58,10 +61,13 @@ RUN mkdir --verbose --parents /root/sources/openvas-"$openvas_version"/build /ro
         cmake ..; \
         make install; \
         sed --in-place "s/redis-openvas/redis/g" /root/sources/openvas-"$openvas_version"/config/redis-openvas.conf; \
-        cp --verbose /root/sources/openvas-"$openvas_version"/config/redis-openvas.conf /etc/redis/; \
+        cp --verbose /root/sources/openvas-"$openvas_version"/config/redis-openvas.conf /etc/redis/redis.conf; \
         chown --verbose redis:redis /etc/redis/redis.conf; \
         chmod --verbose 640 /etc/redis/redis.conf; \
-        echo "db_address = /run/redis/redis-server.sock" > /usr/local/etc/openvas/openvas.conf; \
+        echo "db_address = /run/redis/redis.sock" >> /usr/local/etc/openvas/openvas.conf; \
+        sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/usr/local/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/local/bin/greenbone-nvt-sync; \
+        chown --verbose --recursive greenbone:greenbone /usr/local/share/openvas; \
+        chown --verbose --recursive greenbone:greenbone /usr/local/var/lib/openvas; \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 # Build ospd
@@ -98,7 +104,10 @@ RUN apt-get install --assume-yes \
         pkg-config \
         libical-dev \
         xsltproc \
-        gnutls-bin
+        gnutls-bin \
+        postgresql \
+        postgresql-contrib \
+        postgresql-server-dev-all
 
 RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/downloads; \
         wget --output-document /root/downloads/gvmd.tar.gz https://github.com/greenbone/gvmd/archive/v"$gvmd_version".tar.gz; \
@@ -125,8 +134,5 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downl
 
 RUN ldconfig
 
-RUN useradd --create-home --shell /bin/bash greenbone
-RUN useradd --system --no-create-home --shell /sbin/nologin gvm
-
-EXPOSE 443 9390 9391
-#USER greenbone
+EXPOSE 443
+#EXPOSE 443 9390 9391
