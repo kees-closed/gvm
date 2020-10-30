@@ -1,4 +1,4 @@
-FROM debian:10
+FROM debian:10 AS gvm-primary
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -11,7 +11,7 @@ ENV ospd_openvas_version="20.8.0"
 ENV gvmd_version="20.8.0"
 ENV gsa_version="20.8.0"
 
-RUN useradd --system greenbone
+RUN useradd --system greenbone-sync
 RUN useradd --system gvm
 
 # Build gvm-libs
@@ -93,6 +93,7 @@ RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version"
         cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf /usr/local/etc/openvas/; \
         rm --recursive --force --verbose /root/sources /root/downloads
 
+# Build gvmd
 RUN apt-get install --assume-yes \
         python3-paramiko \
         gcc \
@@ -115,8 +116,12 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         cd /root/sources/gvmd-"$gvmd_version"/build; \
         cmake ..; \
         make install; \
+        chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm; \
+        chown --verbose gvm:gvm /usr/local/var/log/gvm; \
+        chown --verbose gvm:gvm /usr/local/var/run; \
         rm --recursive --force --verbose /root/sources /root/downloads
 
+# Build GSA
 RUN apt-get install --assume-yes \
         libmicrohttpd-dev \
         libxml2-dev \
@@ -125,14 +130,17 @@ RUN apt-get install --assume-yes \
         yarnpkg
 
 RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downloads; \
-        wget --output-document /root/downloads/gsa.tar.gz https://github.com/greenbone/gsa/archive/v"$gvmd_version".tar.gz; \
+        wget --output-document /root/downloads/gsa.tar.gz https://github.com/greenbone/gsa/archive/v"$gsa_version".tar.gz; \
         tar --verbose --extract --file /root/downloads/gsa.tar.gz --directory /root/sources/; \
-        cd /root/sources/gsa-"$gvmd_version"/build; \
+        cd /root/sources/gsa-"$gsa_version"/build; \
         cmake ..; \
         make install; \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 RUN ldconfig
 
-EXPOSE 443
-#EXPOSE 443 9390 9391
+COPY entrypoint.sh /entrypoint.sh
+#ENTRYPOINT /entrypoint.sh
+
+#EXPOSE 443
+EXPOSE 443 9390 9391
