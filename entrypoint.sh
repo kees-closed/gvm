@@ -12,9 +12,12 @@ su -c "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"pgcrypto\";'"
 
 su -c "gvm-manage-certs -a" gvm
 su -c "gvmd --osp-vt-update=/var/run/ospd/ospd-openvas.sock --listen=0.0.0.0 -p 9390" gvm
+su -c "gvmd --create-user=admin --password=test123123" gvm
+su -c "gvmd --get-users" gvm
 gsad --drop-privileges=gvm --verbose --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0
-su -c "greenbone-nvt-sync" greenbone-sync
-su -c "greenbone-feed-sync --type CERT" greenbone-sync
-su -c "greenbone-feed-sync --type SCAP" greenbone-sync
-su -c "greenbone-feed-sync --type GVMD_DATA" greenbone-sync
+su -c "greenbone-nvt-sync" gvm
+su -c "greenbone-feed-sync --type CERT" gvm
+su -c "greenbone-feed-sync --type SCAP" gvm
+su -c "greenbone-feed-sync --type GVMD_DATA" gvm
 openvas -u
+tail -f /usr/local/var/log/gvm/*

@@ -11,7 +11,6 @@ ENV ospd_openvas_version="20.8.0"
 ENV gvmd_version="20.8.0"
 ENV gsa_version="20.8.0"
 
-RUN useradd --system greenbone-sync
 RUN useradd --system gvm
 
 # Build gvm-libs
@@ -66,8 +65,8 @@ RUN mkdir --verbose --parents /root/sources/openvas-"$openvas_version"/build /ro
         chmod --verbose 640 /etc/redis/redis.conf; \
         echo "db_address = /run/redis/redis.sock" >> /usr/local/etc/openvas/openvas.conf; \
         sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/usr/local/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/local/bin/greenbone-nvt-sync; \
-        chown --verbose --recursive greenbone:greenbone /usr/local/share/openvas; \
-        chown --verbose --recursive greenbone:greenbone /usr/local/var/lib/openvas; \
+        chown --verbose --recursive gvm:gvm /usr/local/share/openvas; \
+        chown --verbose --recursive gvm:gvm /usr/local/var/lib/openvas; \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 # Build ospd
@@ -108,7 +107,10 @@ RUN apt-get install --assume-yes \
         gnutls-bin \
         postgresql \
         postgresql-contrib \
-        postgresql-server-dev-all
+        postgresql-server-dev-all \
+        gnupg \
+        haveged \
+        xml-twig-tools
 
 RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/downloads; \
         wget --output-document /root/downloads/gvmd.tar.gz https://github.com/greenbone/gvmd/archive/v"$gvmd_version".tar.gz; \
@@ -117,7 +119,7 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         cmake ..; \
         make install; \
         chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm; \
-        chown --verbose gvm:gvm /usr/local/var/log/gvm; \
+        chown --verbose --recursive gvm:gvm /usr/local/var/log/gvm; \
         chown --verbose gvm:gvm /usr/local/var/run; \
         rm --recursive --force --verbose /root/sources /root/downloads
 
@@ -140,7 +142,6 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downl
 RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
-#ENTRYPOINT /entrypoint.sh
+ENTRYPOINT /entrypoint.sh
 
-#EXPOSE 443
-EXPOSE 443 9390 9391
+EXPOSE 9392
