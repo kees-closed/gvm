@@ -1,0 +1,7 @@
+#!/bin/bash
+
+su --command "greenbone-nvt-sync" gvm
+openvas --update-vt-info
+su --command "greenbone-feed-sync --type CERT" gvm
+su --command "greenbone-feed-sync --type SCAP" gvm
+su --command "greenbone-feed-sync --type GVMD_DATA" gvm

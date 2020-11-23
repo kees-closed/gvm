@@ -142,6 +142,7 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downl
 RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
+COPY gvm-sync /etc/cron.daily/gvm-sync
 ENTRYPOINT /entrypoint.sh
 
-EXPOSE 9392
+EXPOSE 9392/tcp
