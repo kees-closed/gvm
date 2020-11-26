@@ -62,7 +62,8 @@ RUN apt-get install --assume-yes \
         libsnmp-dev \
         libgcrypt20-dev \
         redis-server \
-        rsync
+        rsync \
+        nmap
 
 RUN mkdir --verbose --parents /root/sources/openvas-"$openvas_version"/build /root/downloads; \
         wget --output-document /root/downloads/openvas.tar.gz https://github.com/greenbone/openvas/archive/v"$openvas_version".tar.gz; \
@@ -135,8 +136,8 @@ RUN apt-get install --assume-yes \
 
 RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/downloads; \
         wget --output-document /root/downloads/gvmd.tar.gz https://github.com/greenbone/gvmd/archive/v"$gvmd_version".tar.gz; \
-        wget --output-document /root/downloads/gvmd.tar.gz.sig https://github.com/greenbone/ospd-openvas/releases/download/v"$gvmd_version"/ospd-openvas-"$gvmd_version".tar.gz.sig; \
-        if ! gpg --verify /root/downloads/gvmd.tar.gz.sig; then \
+        wget --output-document /root/downloads/gvmd.tar.gz.asc https://github.com/greenbone/gvmd/releases/download/v"$gvmd_version"/gvmd-"$gvmd_version".tar.gz.asc; \
+        if ! gpg --verify /root/downloads/gvmd.tar.gz.asc; then \
           echo "GPG signature failed"; \
           exit 1; \
         fi; \
@@ -159,7 +160,7 @@ RUN apt-get install --assume-yes \
 
 RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downloads; \
         wget --output-document /root/downloads/gsa.tar.gz https://github.com/greenbone/gsa/archive/v"$gsa_version".tar.gz; \
-        wget --output-document /root/downloads/gsa.tar.gz.asc https://github.com/greenbone/gvmd/releases/download/v"$gsa_version"/gvmd-"$gsa_version".tar.gz.asc; \
+        wget --output-document /root/downloads/gsa.tar.gz.asc https://github.com/greenbone/gsa/releases/download/v"$gsa_version"/gsa-"$gsa_version".tar.gz.asc; \
         if ! gpg --verify /root/downloads/gsa.tar.gz.asc; then \
           echo "GPG signature failed"; \
           exit 1; \
@@ -176,7 +177,7 @@ RUN python3 -m pip install gvm-tools
 RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
-COPY gvm-sync /etc/cron.daily/gvm-sync
+COPY greenbone-feed-sync /etc/cron.daily/greenbone-feed-sync
 ENTRYPOINT /entrypoint.sh
 
 EXPOSE 9392/tcp

@@ -4,6 +4,10 @@ username="admin"
 password=${password:-admin}
 ospd_socket="/usr/local/var/run/ospd/ospd-openvas.sock"
 
+echo "Apply Redis optimization tweaks"
+sysctl --write net.core.somaxconn=1024
+sysctl --write vm.overcommit_memory=1
+
 echo "Start databases"
 service redis-server start
 service postgresql start
@@ -16,16 +20,17 @@ su --command "psql --echo-all --dbname=gvmd --command='GRANT dba TO gvm;'" postg
 su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"uuid-ossp\";'" postgres
 su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"pgcrypto\";'" postgres
 
-echo "Sync GVM feed"
-/etc/cron.daily/gvm-sync
+echo "Start Greenbone feed sync"
+/etc/cron.daily/greenbone-feed-sync
 
 echo "Start OSPD"
-ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 666
+ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766
 
 echo "Generate/import GVM certificates"
 su --command "gvm-manage-certs -a" gvm
 
 echo "Start Greenbone Vulnerability Manager (GVM)"
+su --command "gvmd --migrate" gvm
 su --command "gvmd --osp-vt-update=$ospd_socket --listen=0.0.0.0 -p 9390" gvm
 
 echo "Waiting until the service is available"
