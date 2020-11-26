@@ -1,4 +1,4 @@
-FROM debian:10 AS gvm-primary
+FROM debian:10
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -86,7 +86,7 @@ RUN apt-get install --assume-yes \
 RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version" /root/downloads; \
         wget --output-document /root/downloads/ospd-openvas.tar.gz https://github.com/greenbone/ospd-openvas/archive/v"$ospd_openvas_version".tar.gz; \
         tar --verbose --extract --file /root/downloads/ospd-openvas.tar.gz --directory /root/sources/; \
-        cd /root/sources/ospd-openvas-"$ospd_openvas_version"/build; \
+        cd /root/sources/ospd-openvas-"$ospd_openvas_version"; \
         python3 setup.py install; \
         sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf; \
         cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf /usr/local/etc/openvas/; \
