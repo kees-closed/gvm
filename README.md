@@ -5,6 +5,6 @@ Default credentials:
 * Username: admin
 * Password: admin
 
-To override the default credentials with administrator as username and password, append the following variables to the end of the `podman` command: username=administrator password=administrator
+In order to override the default password "admin" with "test123123", provide the following Podman command argument `--env password="test123123"`.
 
 For more detailed information about this container, check the [installation instructions](https://community.greenbone.net/t/gvm-20-08-stable-initial-release-2020-08-12/6312) and [architecture overview](https://community.greenbone.net/t/about-gvm-architecture/1231).

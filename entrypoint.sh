@@ -1,7 +1,8 @@
 #!/bin/bash
 
-username=${username:-admin}
+username="admin"
 password=${password:-admin}
+ospd_socket="/usr/local/var/run/ospd/ospd-openvas.sock"
 
 echo "Start databases"
 service redis-server start
@@ -19,21 +20,24 @@ echo "Sync GVM feed"
 /etc/cron.daily/gvm-sync
 
 echo "Start OSPD"
-ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket /usr/local/var/run/ospd/ospd-openvas.sock --socket-mode 666
+ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 666
 
 echo "Generate/import GVM certificates"
 su --command "gvm-manage-certs -a" gvm
 
 echo "Start Greenbone Vulnerability Manager (GVM)"
-su --command "gvmd --osp-vt-update=/usr/local/var/run/ospd/ospd-openvas.sock --listen=0.0.0.0 -p 9390" gvm
+su --command "gvmd --osp-vt-update=$ospd_socket --listen=0.0.0.0 -p 9390" gvm
 
 echo "Waiting until the service is available"
 until su --command "gvmd --get-users 1>/dev/null" gvm; do
   continue
 done
 
-echo "Create user"
-su --command "gvmd --create-user=$username --password=$password" gvm
+echo "Create user $username"
+if ! su --command "gvmd --create-user=$username --password=$password" gvm; then
+  echo "Updating password for user $username"
+  su --command "gvmd --user=$username --new-password=$password" gvm
+fi
 
 echo "Start Greenbone Security Assistant"
 gsad --drop-privileges=gvm --verbose --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0
@@ -42,7 +46,7 @@ chown --verbose gvm: /usr/local/var/log/gvm/*
 # Set GVM feed import owner
 while read -r name uid; do
   if [[ "$name" == "$username" ]]; then
-    echo "Setting $name as feed import owner"
+    echo "Setting user $name as feed import owner"
     su --command "gvmd --modify-setting 78eceaec-3385-11ea-b237-28d24461215b --value $uid" gvm
   fi
 done < <(su --command "gvmd --verbose --get-users" gvm)
@@ -50,8 +54,8 @@ done < <(su --command "gvmd --verbose --get-users" gvm)
 # Set OSPD scanner UNIX socket
 while read -r uid host port type name; do
   if [[ "$name" == "OpenVAS Default" ]]; then
-    echo "Setting UNIX socket for scanner $name on $host ($port)"
-    su --command "gvmd --modify-scanner=$uid --scanner-host=/usr/local/var/run/ospd/ospd-openvas.sock" gvm
+    echo "Setting UNIX socket for scanner '$name' on host $host with port $port and of type $type"
+    su --command "gvmd --modify-scanner=$uid --scanner-host=$ospd_socket" gvm
     su --command "gvmd --verify-scanner=$uid" gvm
   fi
 done < <(su --command "gvmd --get-scanners" gvm)
@@ -63,4 +67,4 @@ done < <(su --command "gvmd --get-scanners" gvm)
 #     --scanner-key-priv=/usr/var/lib/gvm/private/CA/clientkey.pem
 
 echo "Start monitoring logs"
-tail -f /usr/local/var/log/gvm/*
+tail --follow /usr/local/var/log/gvm/*
