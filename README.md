@@ -1,6 +1,7 @@
 # Greenbone Vulnerability Manager (GVM) - Source Edition 
 Run the container with the following command: `podman run -it --rm -p 9392:9392 -v gvm-sync:/usr/local/var/lib -v gvm-postgres:/var/lib/postgresql aqual1te/gvm:latest bash`. Then wait for the `rsync` to finish (first run will take a while) and then open the following link in your browser: https://localhost:9392
 
+Default credentials:
 * Username: admin
 * Password: admin
 
