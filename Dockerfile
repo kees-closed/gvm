@@ -40,7 +40,7 @@ RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /
         wget --output-document /root/downloads/gvm-libs.tar.gz https://github.com/greenbone/gvm-libs/archive/v"$gvm_libs_version".tar.gz; \
         wget --output-document /root/downloads/gvm-libs.tar.gz.asc https://github.com/greenbone/gvm-libs/releases/download/v"$gvm_libs_version"/gvm-libs-"$gvm_libs_version".tar.gz.asc; \
         if ! gpg --verify /root/downloads/gvm-libs.tar.gz.asc; then \
-          echo "GPG signature failed"; \
+          echo "GPG signature check failed"; \
           exit 1; \
         fi; \
         tar --verbose --extract --file /root/downloads/gvm-libs.tar.gz --directory /root/sources/; \
@@ -69,7 +69,7 @@ RUN mkdir --verbose --parents /root/sources/openvas-"$openvas_version"/build /ro
         wget --output-document /root/downloads/openvas.tar.gz https://github.com/greenbone/openvas/archive/v"$openvas_version".tar.gz; \
         wget --output-document /root/downloads/openvas.tar.gz.sig https://github.com/greenbone/openvas/releases/download/v"$openvas_version"/openvas-"$openvas_version".tar.gz.sig; \
         if ! gpg --verify /root/downloads/openvas.tar.gz.sig; then \
-          echo "GPG signature failed"; \
+          echo "GPG signature check failed"; \
           exit 1; \
         fi; \
         tar --verbose --extract --file /root/downloads/openvas.tar.gz --directory /root/sources/; \
@@ -104,7 +104,7 @@ RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version"
         wget --output-document /root/downloads/ospd-openvas.tar.gz https://github.com/greenbone/ospd-openvas/archive/v"$ospd_openvas_version".tar.gz; \
         wget --output-document /root/downloads/ospd-openvas.tar.gz.sig https://github.com/greenbone/ospd-openvas/releases/download/v"$ospd_openvas_version"/ospd-openvas-"$ospd_openvas_version".tar.gz.sig; \
         if ! gpg --verify /root/downloads/ospd-openvas.tar.gz.sig; then \
-          echo "GPG signature failed"; \
+          echo "GPG signature check failed"; \
           exit 1; \
         fi; \
         tar --verbose --extract --file /root/downloads/ospd-openvas.tar.gz --directory /root/sources/; \
@@ -138,7 +138,7 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         wget --output-document /root/downloads/gvmd.tar.gz https://github.com/greenbone/gvmd/archive/v"$gvmd_version".tar.gz; \
         wget --output-document /root/downloads/gvmd.tar.gz.asc https://github.com/greenbone/gvmd/releases/download/v"$gvmd_version"/gvmd-"$gvmd_version".tar.gz.asc; \
         if ! gpg --verify /root/downloads/gvmd.tar.gz.asc; then \
-          echo "GPG signature failed"; \
+          echo "GPG signature check failed"; \
           exit 1; \
         fi; \
         tar --verbose --extract --file /root/downloads/gvmd.tar.gz --directory /root/sources/; \
@@ -162,7 +162,7 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downl
         wget --output-document /root/downloads/gsa.tar.gz https://github.com/greenbone/gsa/archive/v"$gsa_version".tar.gz; \
         wget --output-document /root/downloads/gsa.tar.gz.asc https://github.com/greenbone/gsa/releases/download/v"$gsa_version"/gsa-"$gsa_version".tar.gz.asc; \
         if ! gpg --verify /root/downloads/gsa.tar.gz.asc; then \
-          echo "GPG signature failed"; \
+          echo "GPG signature check failed"; \
           exit 1; \
         fi; \
         tar --verbose --extract --file /root/downloads/gsa.tar.gz --directory /root/sources/; \
