@@ -5,11 +5,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
-ENV gvm_libs_version="20.8.1"
-ENV openvas_scanner_version="20.8.1"
-ENV ospd_openvas_version="20.8.1"
-ENV gvmd_version="20.8.1"
-ENV gsa_version="20.8.1"
+ENV gvm_libs_version="21.4.0"
+ENV openvas_scanner_version="21.4.0"
+ENV ospd_openvas_version="21.4.0"
+ENV gvmd_version="21.4.0"
+ENV gsa_version="21.4.0"
 
 RUN useradd --system gvm
 
@@ -30,11 +30,10 @@ RUN apt-get install --assume-yes \
         libgnutls28-dev \
         uuid-dev \
         libssh-gcrypt-dev \
-        libldap2-dev \
         libhiredis-dev \
         libxml2-dev \
-        libradcli-dev \
-        libpcap-dev
+        libpcap-dev \
+        libnet1-dev
 
 RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /root/downloads && \
         wget --output-document /root/downloads/gvm-libs.tar.gz https://github.com/greenbone/gvm-libs/archive/v"$gvm_libs_version".tar.gz && \

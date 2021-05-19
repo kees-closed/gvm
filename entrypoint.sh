@@ -68,5 +68,8 @@ done < <(su --command "gvmd --get-scanners" gvm)
 #     --scanner-key-pub=/usr/var/lib/gvm/CA/clientcert.pem \
 #     --scanner-key-priv=/usr/var/lib/gvm/private/CA/clientkey.pem
 
+echo "Starting cron to ensure continued up-to-date NVTs"
+cron
+
 echo "Start monitoring logs"
 tail --follow /usr/local/var/log/gvm/*
