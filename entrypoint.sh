@@ -14,8 +14,6 @@ su --command "createuser --echo --no-createdb --no-createrole --no-superuser gvm
 su --command "createdb --echo --owner=gvm gvmd" postgres
 su --command "psql --echo-all --dbname=gvmd --command='CREATE ROLE dba WITH SUPERUSER noinherit;'" postgres
 su --command "psql --echo-all --dbname=gvmd --command='GRANT dba TO gvm;'" postgres
-su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"uuid-ossp\";'" postgres
-su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"pgcrypto\";'" postgres
 
 echo "Start Greenbone feed sync in the background"
 /etc/cron.daily/greenbone-feed-sync &
