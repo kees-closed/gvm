@@ -15,8 +15,10 @@ su --command "createdb --echo --owner=gvm gvmd" postgres
 su --command "psql --echo-all --dbname=gvmd --command='CREATE ROLE dba WITH SUPERUSER noinherit;'" postgres
 su --command "psql --echo-all --dbname=gvmd --command='GRANT dba TO gvm;'" postgres
 
-echo "Start Greenbone feed sync in the background"
-/etc/cron.daily/greenbone-feed-sync &
+if [[ -z $initial_nvt_sync ]];
+  echo "Start Greenbone feed sync in the background"
+  /etc/cron.daily/greenbone-feed-sync &
+fi
 
 echo "Start OSP server implementation to allow GVM to remotely control OpenVAS"
 ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --log-level "$log_level"
