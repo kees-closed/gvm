@@ -15,7 +15,7 @@ su --command "createdb --echo --owner=gvm gvmd" postgres
 su --command "psql --echo-all --dbname=gvmd --command='CREATE ROLE dba WITH SUPERUSER noinherit;'" postgres
 su --command "psql --echo-all --dbname=gvmd --command='GRANT dba TO gvm;'" postgres
 
-if [[ -z $initial_nvt_sync ]];
+if [[ -z $initial_nvt_sync ]]; then
   echo "Start Greenbone feed sync in the background"
   /etc/cron.daily/greenbone-feed-sync &
 fi
