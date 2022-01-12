@@ -1,15 +1,15 @@
-FROM debian:stable-slim
+FROM debian:buster-slim
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
-ENV gvm_libs_version="21.4.0"
-ENV openvas_scanner_version="21.4.0"
-ENV ospd_openvas_version="21.4.0"
-ENV gvmd_version="21.4.0"
-ENV gsa_version="21.4.0"
+ENV gvm_libs_version="21.4.1"
+ENV openvas_scanner_version="21.4.1"
+ENV ospd_openvas_version="21.4.1"
+ENV gvmd_version="21.4.1"
+ENV gsa_version="21.4.1"
 
 RUN useradd --system gvm
 
@@ -37,8 +37,8 @@ RUN apt-get install --assume-yes \
 
 RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /root/downloads && \
         wget --output-document /root/downloads/gvm-libs.tar.gz https://github.com/greenbone/gvm-libs/archive/v"$gvm_libs_version".tar.gz && \
-        wget --output-document /root/downloads/gvm-libs.tar.gz.sig https://github.com/greenbone/gvm-libs/releases/download/v"$gvm_libs_version"/gvm-libs-"$gvm_libs_version".tar.gz.sig && \
-        if ! gpg --verify /root/downloads/gvm-libs.tar.gz.sig; then \
+        wget --output-document /root/downloads/gvm-libs.tar.gz.asc https://github.com/greenbone/gvm-libs/releases/download/v"$gvm_libs_version"/gvm-libs-"$gvm_libs_version".tar.gz.asc && \
+        if ! gpg --verify /root/downloads/gvm-libs.tar.gz.asc ; then \
           echo "GPG signature check failed"; \
           exit 1; \
         fi && \
@@ -66,8 +66,8 @@ RUN apt-get install --assume-yes \
 
 RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_version"/build /root/downloads && \
         wget --output-document /root/downloads/openvas-scanner.tar.gz https://github.com/greenbone/openvas-scanner/archive/v"$openvas_scanner_version".tar.gz && \
-        wget --output-document /root/downloads/openvas-scanner.tar.gz.sig https://github.com/greenbone/openvas-scanner/releases/download/v"$openvas_scanner_version"/openvas-scanner-"$openvas_scanner_version".tar.gz.sig && \
-        if ! gpg --verify /root/downloads/openvas-scanner.tar.gz.sig; then \
+        wget --output-document /root/downloads/openvas-scanner.tar.gz.asc https://github.com/greenbone/openvas-scanner/releases/download/v"$openvas_scanner_version"/openvas-scanner-"$openvas_scanner_version".tar.gz.asc && \
+        if ! gpg --verify /root/downloads/openvas-scanner.tar.gz.asc; then \
           echo "GPG signature check failed"; \
           exit 1; \
         fi && \
@@ -101,8 +101,8 @@ RUN apt-get install --assume-yes \
 
 RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version" /root/downloads && \
         wget --output-document /root/downloads/ospd-openvas.tar.gz https://github.com/greenbone/ospd-openvas/archive/v"$ospd_openvas_version".tar.gz && \
-        wget --output-document /root/downloads/ospd-openvas.tar.gz.sig https://github.com/greenbone/ospd-openvas/releases/download/v"$ospd_openvas_version"/ospd-openvas-"$ospd_openvas_version".tar.gz.sig && \
-        if ! gpg --verify /root/downloads/ospd-openvas.tar.gz.sig; then \
+        wget --output-document /root/downloads/ospd-openvas.tar.gz.asc https://github.com/greenbone/ospd-openvas/releases/download/v"$ospd_openvas_version"/ospd-openvas-"$ospd_openvas_version".tar.gz.asc && \
+        if ! gpg --verify /root/downloads/ospd-openvas.tar.gz.asc; then \
           echo "GPG signature check failed"; \
           exit 1; \
         fi && \
@@ -110,7 +110,7 @@ RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version"
         cd /root/sources/ospd-openvas-"$ospd_openvas_version" && \
         python3 setup.py install && \
         sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf && \
-        cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf /usr/local/etc/openvas/ && \
+        cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf /usr/local/etc/openvas/ospd.conf && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 # Build gvmd
@@ -159,8 +159,8 @@ RUN apt-get install --assume-yes \
 
 RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downloads && \
         wget --output-document /root/downloads/gsa.tar.gz https://github.com/greenbone/gsa/archive/v"$gsa_version".tar.gz && \
-        wget --output-document /root/downloads/gsa.tar.gz.sig https://github.com/greenbone/gsa/releases/download/v"$gsa_version"/gsa-"$gsa_version".tar.gz.sig && \
-        if ! gpg --verify /root/downloads/gsa.tar.gz.sig; then \
+        wget --output-document /root/downloads/gsa.tar.gz.asc https://github.com/greenbone/gsa/releases/download/v"$gsa_version"/gsa-"$gsa_version".tar.gz.asc && \
+        if ! gpg --verify /root/downloads/gsa.tar.gz.asc; then \
           echo "GPG signature check failed"; \
           exit 1; \
         fi && \
