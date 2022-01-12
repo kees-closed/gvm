@@ -23,7 +23,7 @@ if [[ -z $initial_nvt_sync ]]; then
 fi
 
 echo "Start OSP server implementation to allow GVM to remotely control OpenVAS"
-ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --log-level "$log_level"
+ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --pid-file /usr/local/var/run/ospd.pid --log-level "$log_level"
 
 echo "Generate/import GVM certificates"
 su --command "gvm-manage-certs -a" gvm
