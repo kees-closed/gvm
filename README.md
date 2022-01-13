@@ -1,5 +1,5 @@
 # Greenbone Vulnerability Manager (GVM) - Source Edition 
-Run the container with the following command: `podman run -it --rm -p 9392:9392 -v gvm-sync:/usr/local/var/lib -v gvm-postgres:/var/lib/postgresql --cap-add=NET_RAW docker.io/aqual1te/gvm:latest`. Then wait for the `rsync` to finish (first run will take a while) and then open the following link in your browser: https://localhost:9392
+Run the container with the following command: `podman run -it --rm -p 9392:9392 -v gvm-sync:/usr/local/var/lib -v gvm-postgres:/var/lib/postgresql --cap-add=NET_RAW quay.io/keesdejong/gvm:latest`. Then wait for the `rsync` to finish (first run will take a while) and then open the following link in your browser: https://localhost:9392
 
 Default credentials:
 * Username: admin
