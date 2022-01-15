@@ -23,8 +23,6 @@ if [[ -z $initial_nvt_sync ]]; then
 fi
 
 echo "Start OSP server implementation to allow GVM to remotely control OpenVAS"
-# This make dir should not be needed, but for some reason GVM needs it since 21.4.1
-mkdir --verbose /run/ospd/
 ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --log-level "$log_level"
 
 echo "Generate/import GVM certificates"

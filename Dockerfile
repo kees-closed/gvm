@@ -1,15 +1,15 @@
-FROM debian:buster-slim
+FROM debian:stable-slim
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
-ENV gvm_libs_version="21.4.1"
-ENV openvas_scanner_version="21.4.1"
-ENV ospd_openvas_version="21.4.1"
-ENV gvmd_version="21.4.1"
-ENV gsa_version="21.4.1"
+ENV gvm_libs_version="21.4.3"
+ENV openvas_scanner_version="21.4.3"
+ENV ospd_openvas_version="21.4.3"
+ENV gvmd_version="21.4.4"
+ENV gsa_version="21.4.3"
 
 RUN useradd --system gvm
 
@@ -33,7 +33,8 @@ RUN apt-get install --assume-yes \
         libhiredis-dev \
         libxml2-dev \
         libpcap-dev \
-        libnet1-dev
+        libnet1-dev \
+        libcgreen1-dev
 
 RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /root/downloads && \
         wget --output-document /root/downloads/gvm-libs.tar.gz https://github.com/greenbone/gvm-libs/archive/v"$gvm_libs_version".tar.gz && \
@@ -44,16 +45,21 @@ RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /
         fi && \
         tar --verbose --extract --file /root/downloads/gvm-libs.tar.gz --directory /root/sources/ && \
         cd /root/sources/gvm-libs-"$gvm_libs_version"/build && \
-        cmake .. && \
+        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        make tests && \
         make install && \
+        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        make tests && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
-# Build openvas
+# Build openvas-scanner
 RUN apt-get install --assume-yes \
+        gcc \
         pkg-config \
         libssh-gcrypt-dev \
         libgnutls28-dev \
         libglib2.0-dev \
+        libjson-glib-dev \
         libpcap-dev \
         libgpgme-dev \
         bison \
@@ -73,16 +79,17 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         fi && \
         tar --verbose --extract --file /root/downloads/openvas-scanner.tar.gz --directory /root/sources/ && \
         cd /root/sources/openvas-scanner-"$openvas_scanner_version"/build && \
-        cmake .. && \
+        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        make tests && \
         make install && \
         sed --in-place "s/redis-openvas/redis/g" /root/sources/openvas-scanner-"$openvas_scanner_version"/config/redis-openvas.conf && \
         cp --verbose /root/sources/openvas-scanner-"$openvas_scanner_version"/config/redis-openvas.conf /etc/redis/redis.conf && \
         chown --verbose redis:redis /etc/redis/redis.conf && \
         chmod --verbose 640 /etc/redis/redis.conf && \
-        echo "db_address = /run/redis/redis.sock" >> /usr/local/etc/openvas/openvas.conf && \
+        echo "db_address = /run/redis/redis.sock" >> /etc/openvas/openvas.conf && \
         sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/usr/local/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/local/bin/greenbone-nvt-sync && \
         chown --verbose --recursive gvm:gvm /usr/local/share/openvas && \
-        chown --verbose --recursive gvm:gvm /usr/local/var/lib/openvas && \
+        chown --verbose --recursive gvm:gvm /var/lib/openvas && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 # Build ospd
@@ -109,19 +116,18 @@ RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version"
         tar --verbose --extract --file /root/downloads/ospd-openvas.tar.gz --directory /root/sources/ && \
         cd /root/sources/ospd-openvas-"$ospd_openvas_version" && \
         python3 setup.py install && \
-        sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf && \
-        cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd.conf /usr/local/etc/openvas/ospd.conf && \
+        sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf && \
+        cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf /etc/openvas/ospd.conf && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 # Build gvmd
 RUN apt-get install --assume-yes \
-        python3-paramiko \
         gcc \
         cmake \
         libglib2.0-dev \
         libgnutls28-dev \
         libpq-dev \
-        postgresql-server-dev-11 \
+        postgresql-server-dev-13 \
         pkg-config \
         libical-dev \
         xsltproc \
@@ -142,11 +148,15 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         fi && \
         tar --verbose --extract --file /root/downloads/gvmd.tar.gz --directory /root/sources/ && \
         cd /root/sources/gvmd-"$gvmd_version"/build && \
-        cmake .. && \
+        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        make tests && \
         make install && \
-        chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm && \
+        mkdir --verbose --parent /usr/local/var/log/gvm && \
+        mkdir --verbose --parent /usr/local/var/run/gvm && \
+        mkdir --verbose --parent /usr/local/var/lib/gvm && \
+        chown --verbose gvm:gvm /var/run/gvm && \
         chown --verbose --recursive gvm:gvm /usr/local/var/log/gvm && \
-        chown --verbose gvm:gvm /usr/local/var/run && \
+        chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
 # Build GSA
@@ -166,7 +176,7 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downl
         fi && \
         tar --verbose --extract --file /root/downloads/gsa.tar.gz --directory /root/sources/ && \
         cd /root/sources/gsa-"$gsa_version"/build && \
-        cmake .. && \
+        cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
         make install && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
