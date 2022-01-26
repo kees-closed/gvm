@@ -3,7 +3,7 @@ MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
-ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV PKG_CONFIG_PATH=/lib/pkgconfig:$PKG_CONFIG_PATH
 
 ENV gvm_libs_version="21.4.3"
 ENV openvas_scanner_version="21.4.3"
@@ -45,10 +45,10 @@ RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /
         fi && \
         tar --verbose --extract --file /root/downloads/gvm-libs.tar.gz --directory /root/sources/ && \
         cd /root/sources/gvm-libs-"$gvm_libs_version"/build && \
-        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        cmake -DBUILD_TESTS=ON .. && \
         make tests && \
         make install && \
-        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        cmake -DBUILD_TESTS=ON .. && \
         make tests && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
@@ -79,7 +79,7 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         fi && \
         tar --verbose --extract --file /root/downloads/openvas-scanner.tar.gz --directory /root/sources/ && \
         cd /root/sources/openvas-scanner-"$openvas_scanner_version"/build && \
-        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        cmake -DBUILD_TESTS=ON .. && \
         make tests && \
         make install && \
         sed --in-place "s/redis-openvas/redis/g" /root/sources/openvas-scanner-"$openvas_scanner_version"/config/redis-openvas.conf && \
@@ -87,8 +87,8 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         chown --verbose redis:redis /etc/redis/redis.conf && \
         chmod --verbose 640 /etc/redis/redis.conf && \
         echo "db_address = /run/redis/redis.sock" >> /etc/openvas/openvas.conf && \
-        sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/usr/local/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/local/bin/greenbone-nvt-sync && \
-        chown --verbose --recursive gvm:gvm /usr/local/share/openvas && \
+        sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/bin/greenbone-nvt-sync && \
+        chown --verbose --recursive gvm:gvm /usr/share/openvas && \
         chown --verbose --recursive gvm:gvm /var/lib/openvas && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
@@ -116,9 +116,9 @@ RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version"
         tar --verbose --extract --file /root/downloads/ospd-openvas.tar.gz --directory /root/sources/ && \
         cd /root/sources/ospd-openvas-"$ospd_openvas_version" && \
         python3 setup.py install && \
-        sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf && \
         cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf /etc/openvas/ospd.conf && \
         rm --recursive --force --verbose /root/sources /root/downloads
+        #sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf && \
 
 # Build gvmd
 RUN apt-get install --assume-yes \
@@ -148,16 +148,21 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         fi && \
         tar --verbose --extract --file /root/downloads/gvmd.tar.gz --directory /root/sources/ && \
         cd /root/sources/gvmd-"$gvmd_version"/build && \
-        cmake -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        cmake -DBUILD_TESTS=ON .. && \
         make tests && \
         make install && \
-        mkdir --verbose --parent /usr/local/var/log/gvm && \
-        mkdir --verbose --parent /usr/local/var/run/gvm && \
-        mkdir --verbose --parent /usr/local/var/lib/gvm && \
-        chown --verbose gvm:gvm /var/run/gvm && \
-        chown --verbose --recursive gvm:gvm /usr/local/var/log/gvm && \
-        chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm && \
+        #mkdir --verbose --parent /run/ospd && \
+        #mkdir --verbose --parent /usr/local/var/log/gvm && \
+        #mkdir --verbose --parent /usr/local/var/run/gvm && \
+        #chown --verbose gvm:gvm /run/ospd && \
+        #chown --verbose gvm:gvm /var/run/gvm && \
+        #chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm && \
+        #chown --verbose --recursive gvm:gvm /usr/local/var/log/gvm && \
+        #chown --verbose --recursive gvm:gvm /var/lib/gvm && \
+        #chown --verbose --recursive gvm:gvm /var/log/gvm && \
+        #chown --verbose --recursive gvm:gvm /usr/local/var/run/gvm && \
         rm --recursive --force --verbose /root/sources /root/downloads
+#gsad main:CRITICAL:2022-01-15 14h43.06 utc:316: main: Could not load private SSL key from /usr/local/var/lib/gvm/private/CA/serverkey.pem: Failed to open file “/usr/local/var/lib/gvm/private/CA/serverkey.pem”: No such file or directory
 
 # Build GSA
 RUN apt-get install --assume-yes \
@@ -176,7 +181,7 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version"/build /root/downl
         fi && \
         tar --verbose --extract --file /root/downloads/gsa.tar.gz --directory /root/sources/ && \
         cd /root/sources/gsa-"$gsa_version"/build && \
-        cmake -DCMAKE_INSTALL_PREFIX=/usr/local/ .. && \
+        cmake .. && \
         make install && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
@@ -187,6 +192,6 @@ RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
 COPY greenbone-feed-sync /etc/cron.daily/greenbone-feed-sync
-ENTRYPOINT /entrypoint.sh
+#ENTRYPOINT /entrypoint.sh
 
 EXPOSE 9392/tcp

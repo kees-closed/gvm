@@ -2,7 +2,7 @@
 
 username="admin"
 password="${password:-admin}"
-ospd_socket="${ospd_socket:-/usr/local/var/run/ospd/ospd-openvas.sock}"
+ospd_socket="${ospd_socket:-/var/run/ospd/ospd-openvas.sock}"
 log_level="${log_level:-INFO}"
 
 echo "Start databases"
@@ -22,15 +22,27 @@ if [[ -z $initial_nvt_sync ]]; then
   /etc/cron.daily/greenbone-feed-sync &
 fi
 
-echo "Start OSP server implementation to allow GVM to remotely control OpenVAS"
-ospd-openvas --log-file /usr/local/var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --log-level "$log_level"
+echo "Start OSPD server implementation to allow GVM to remotely control OpenVAS"
+if ! ospd-openvas --log-file /var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --log-level "$log_level"; then
+  echo "Failed to start OSPD server"
+  exit 1
+fi
 
 echo "Generate/import GVM certificates"
-su --command "gvm-manage-certs -a" gvm
+if ! su --command "gvm-manage-certs -a" gvm; then
+  echo "Failed to generate/import GVM certificates"
+  exit 1
+fi
 
 echo "Start Greenbone Vulnerability Manager (GVM)"
-su --command "gvmd --migrate" gvm
-su --command "gvmd --osp-vt-update=$ospd_socket --listen=0.0.0.0 --port 9390" gvm
+if ! su --command "gvmd --migrate" gvm; then
+  echo "Failed to start Greenbone Vulnerability Manager (GVM)"
+  exit 1
+fi
+if ! su --command "gvmd --osp-vt-update=$ospd_socket --listen=0.0.0.0 --port 9390" gvm; then
+  echo "Failed to start Greenbone Vulnerability Manager (GVM)"
+  exit 1
+fi
 
 echo "Waiting until the service is available"
 until su --command "gvmd --get-users 1>/dev/null" gvm; do
@@ -40,18 +52,27 @@ done
 echo "Create user $username"
 if ! su --command "gvmd --create-user=$username --password=$password" gvm; then
   echo "Updating password for user $username"
-  su --command "gvmd --user=$username --new-password=$password" gvm
+  if ! su --command "gvmd --user=$username --new-password=$password" gvm; then
+    echo "Failed updating password for user $username"
+    exit 1
+  fi
 fi
 
 echo "Start Greenbone Security Assistant (GSA)"
-gsad --drop-privileges=gvm --verbose --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0
-chown --verbose gvm: /usr/local/var/log/gvm/*
+if ! gsad --drop-privileges=gvm --verbose --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0; then
+  echo "Failed to start Greenbone Security Assistant (GSA)"
+  exit 1
+fi
+chown --verbose gvm: /var/log/gvm/*
 
 # Set GVM feed import owner
 while read -r name uid; do
   if [[ "$name" == "$username" ]]; then
     echo "Setting user $name as feed import owner"
-    su --command "gvmd --modify-setting 78eceaec-3385-11ea-b237-28d24461215b --value $uid" gvm
+    if ! su --command "gvmd --modify-setting 78eceaec-3385-11ea-b237-28d24461215b --value $uid" gvm; then
+      echo "Failed setting user $name as feed import owner"
+      exit 1
+    fi
   fi
 done < <(su --command "gvmd --verbose --get-users" gvm)
 
@@ -59,8 +80,14 @@ done < <(su --command "gvmd --verbose --get-users" gvm)
 while read -r uid host port type name; do
   if [[ "$name" == "OpenVAS Default" ]]; then
     echo "Setting UNIX socket for scanner '$name' on host $host with port $port and of type $type"
-    su --command "gvmd --modify-scanner=$uid --scanner-host=$ospd_socket" gvm
-    su --command "gvmd --verify-scanner=$uid" gvm
+    if ! su --command "gvmd --modify-scanner=$uid --scanner-host=$ospd_socket" gvm; then
+      echo "Failed setting UNIX socket for scanner '$name' on host $host with port $port and of type $type"
+      exit 1
+    fi
+    echo "Verify scanner with UID $uid"
+    if ! su --command "gvmd --verify-scanner=$uid" gvm; then
+      exit 1
+    fi
   fi
 done < <(su --command "gvmd --get-scanners" gvm)
 
@@ -74,4 +101,4 @@ echo "Starting cron to ensure continued up-to-date NVTs"
 cron
 
 echo "Start monitoring logs"
-tail --follow /usr/local/var/log/gvm/*
+tail --follow /var/log/gvm/*
