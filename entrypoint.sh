@@ -2,7 +2,7 @@
 
 username="admin"
 password="${password:-admin}"
-ospd_socket="${ospd_socket:-/var/run/ospd/ospd-openvas.sock}"
+ospd_socket="${ospd_socket:-/run/ospd/ospd.sock}"
 log_level="${log_level:-INFO}"
 
 echo "Start databases"
@@ -23,6 +23,8 @@ if [[ -z $initial_nvt_sync ]]; then
 fi
 
 echo "Start OSPD server implementation to allow GVM to remotely control OpenVAS"
+mkdir --verbose "$(dirname $ospd_socket)"
+chown --verbose gvm:gvm "$(dirname $ospd_socket)"
 if ! ospd-openvas --log-file /var/log/gvm/ospd-openvas.log --unix-socket "$ospd_socket" --socket-mode 766 --log-level "$log_level"; then
   echo "Failed to start OSPD server"
   exit 1
@@ -59,7 +61,7 @@ if ! su --command "gvmd --create-user=$username --password=$password" gvm; then
 fi
 
 echo "Start Greenbone Security Assistant (GSA)"
-if ! gsad --drop-privileges=gvm --verbose --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0; then
+if ! gsad --verbose --drop-privileges=gvm --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0; then
   echo "Failed to start Greenbone Security Assistant (GSA)"
   exit 1
 fi

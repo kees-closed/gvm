@@ -92,19 +92,23 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         chown --verbose --recursive gvm:gvm /var/lib/openvas && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
-# Build ospd
-RUN apt-get install --assume-yes \
-        python3-paramiko \
-        python3-lxml \
-        python3-defusedxml \
-        python3-pip && \
-        python3 -m pip install ospd
+# Build ospd (ospd got merged into ospd-openvas, but maybe in version 21.4.4?)
+#RUN apt-get install --assume-yes \
+#        python3-paramiko \
+#        python3-lxml \
+#        python3-defusedxml \
+#        python3-pip && \
+#        python3 -m pip install ospd
 
 # Build ospd-openvas
 RUN apt-get install --assume-yes \
-        python3-redis \
+        python3-defusedxml \
+        python3-lxml \
+        python3-packaging \
+        python3-paho-mqtt \
         python3-psutil \
-        python3-packaging
+        python3-gnupg \
+        python3-pip
 
 RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version" /root/downloads && \
         wget --output-document /root/downloads/ospd-openvas.tar.gz https://github.com/greenbone/ospd-openvas/archive/v"$ospd_openvas_version".tar.gz && \
@@ -155,7 +159,6 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         chown --verbose --recursive gvm:gvm /var/lib/gvm && \
         chown --verbose --recursive gvm:gvm /var/log/gvm && \
         rm --recursive --force --verbose /root/sources /root/downloads
-#gsad main:CRITICAL:2022-01-15 14h43.06 utc:316: main: Could not load private SSL key from /usr/local/var/lib/gvm/private/CA/serverkey.pem: Failed to open file “/usr/local/var/lib/gvm/private/CA/serverkey.pem”: No such file or directory
 
 # Build GSA
 RUN apt-get install --assume-yes \
@@ -185,6 +188,6 @@ RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
 COPY greenbone-feed-sync /etc/cron.daily/greenbone-feed-sync
-#ENTRYPOINT /entrypoint.sh
+ENTRYPOINT /entrypoint.sh
 
 EXPOSE 9392/tcp
