@@ -3,7 +3,7 @@ MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
-ENV PKG_CONFIG_PATH=/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
 ENV gvm_libs_version="21.4.3"
 ENV openvas_scanner_version="21.4.3"
@@ -87,8 +87,8 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         chown --verbose redis:redis /etc/redis/redis.conf && \
         chmod --verbose 640 /etc/redis/redis.conf && \
         echo "db_address = /run/redis/redis.sock" >> /etc/openvas/openvas.conf && \
-        sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/bin/greenbone-nvt-sync && \
-        chown --verbose --recursive gvm:gvm /usr/share/openvas && \
+        sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/local/bin/greenbone-nvt-sync && \
+        chown --verbose --recursive gvm:gvm /usr/local/share/openvas && \
         chown --verbose --recursive gvm:gvm /var/lib/openvas && \
         rm --recursive --force --verbose /root/sources /root/downloads
 
@@ -117,8 +117,8 @@ RUN mkdir --verbose --parents /root/sources/ospd-openvas-"$ospd_openvas_version"
         cd /root/sources/ospd-openvas-"$ospd_openvas_version" && \
         python3 setup.py install && \
         cp --verbose /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf /etc/openvas/ospd.conf && \
+        sed --in-place "s,<install-prefix>,/usr/local,g" /etc/openvas/ospd.conf && \
         rm --recursive --force --verbose /root/sources /root/downloads
-        #sed --in-place "s,<install-prefix>,/usr/local,g" /root/sources/ospd-openvas-"$ospd_openvas_version"/config/ospd-openvas.conf && \
 
 # Build gvmd
 RUN apt-get install --assume-yes \
@@ -151,16 +151,9 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         cmake -DBUILD_TESTS=ON .. && \
         make tests && \
         make install && \
-        #mkdir --verbose --parent /run/ospd && \
-        #mkdir --verbose --parent /usr/local/var/log/gvm && \
-        #mkdir --verbose --parent /usr/local/var/run/gvm && \
-        #chown --verbose gvm:gvm /run/ospd && \
-        #chown --verbose gvm:gvm /var/run/gvm && \
-        #chown --verbose --recursive gvm:gvm /usr/local/var/lib/gvm && \
-        #chown --verbose --recursive gvm:gvm /usr/local/var/log/gvm && \
-        #chown --verbose --recursive gvm:gvm /var/lib/gvm && \
-        #chown --verbose --recursive gvm:gvm /var/log/gvm && \
-        #chown --verbose --recursive gvm:gvm /usr/local/var/run/gvm && \
+        chown --verbose gvm:gvm /run/gvm && \
+        chown --verbose --recursive gvm:gvm /var/lib/gvm && \
+        chown --verbose --recursive gvm:gvm /var/log/gvm && \
         rm --recursive --force --verbose /root/sources /root/downloads
 #gsad main:CRITICAL:2022-01-15 14h43.06 utc:316: main: Could not load private SSL key from /usr/local/var/lib/gvm/private/CA/serverkey.pem: Failed to open file “/usr/local/var/lib/gvm/private/CA/serverkey.pem”: No such file or directory
 
