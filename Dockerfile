@@ -189,5 +189,4 @@ RUN ldconfig
 COPY entrypoint.sh /entrypoint.sh
 COPY greenbone-feed-sync /etc/cron.daily/greenbone-feed-sync
 ENTRYPOINT /entrypoint.sh
-
 EXPOSE 9392/tcp

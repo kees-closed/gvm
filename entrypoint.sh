@@ -20,6 +20,15 @@ su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"pgcryp
 if [[ -z $initial_nvt_sync ]]; then
   echo "Start Greenbone feed sync in the background"
   /etc/cron.daily/greenbone-feed-sync &
+  echo "Wait for the plugin_feed_info.inc file to be synced"
+  until [[ -f /var/lib/openvas/plugins/plugin_feed_info.inc ]]; do
+    continue
+  done
+  echo "Update NVT (Network Vulnerability Tests) info into redis store from NVT files"
+  if ! openvas --update-vt-info; then
+    echo "NVT update failed"
+    exit 1
+  fi
 fi
 
 echo "Start OSPD server implementation to allow GVM to remotely control OpenVAS"
@@ -31,17 +40,17 @@ if ! ospd-openvas --log-file /var/log/gvm/ospd-openvas.log --unix-socket "$ospd_
 fi
 
 echo "Generate/import GVM certificates"
-if ! su --command "gvm-manage-certs -a" gvm; then
+if ! su --command "gvm-manage-certs -vda" gvm; then
   echo "Failed to generate/import GVM certificates"
   exit 1
 fi
 
 echo "Start Greenbone Vulnerability Manager (GVM)"
-if ! su --command "gvmd --migrate" gvm; then
+if ! su --command "gvmd --verbose --migrate" gvm; then
   echo "Failed to start Greenbone Vulnerability Manager (GVM)"
   exit 1
 fi
-if ! su --command "gvmd --osp-vt-update=$ospd_socket --listen=0.0.0.0 --port 9390" gvm; then
+if ! su --command "gvmd --verbose --osp-vt-update=$ospd_socket --listen=0.0.0.0 --port 9390" gvm; then
   echo "Failed to start Greenbone Vulnerability Manager (GVM)"
   exit 1
 fi
