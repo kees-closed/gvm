@@ -1,6 +1,7 @@
 FROM debian:stable-slim
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
+ENV TZ="Europe/Amsterdam"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
@@ -188,5 +189,6 @@ RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
 COPY greenbone-feed-sync /etc/cron.daily/greenbone-feed-sync
+COPY logrotate-gvm /etc/logrotate.d/gvm
 ENTRYPOINT /entrypoint.sh
 EXPOSE 9392/tcp

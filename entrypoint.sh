@@ -4,6 +4,10 @@ username="admin"
 password="${password:-admin}"
 ospd_socket="${ospd_socket:-/run/ospd/ospd.sock}"
 log_level="${log_level:-INFO}"
+ssl_certificate="${ssl_certificate:-/var/lib/gvm/CA/servercert.pem}"
+ssl_private_key="${ssl_private_key:-/var/lib/gvm/private/CA/serverkey.pem}"
+tls_ciphers="${tls_ciphers:-SECURE128:-AES-128-CBC:-CAMELLIA-128-CBC:-VERS-SSL3.0:-VERS-TLS1.0:-VERS-TLS1.1}"
+export TZ="${TZ:-Europe/Amsterdam}"
 
 echo "Start databases"
 service redis-server start
@@ -40,7 +44,7 @@ if ! ospd-openvas --log-file /var/log/gvm/ospd-openvas.log --unix-socket "$ospd_
 fi
 
 echo "Generate/import GVM certificates"
-if ! su --command "gvm-manage-certs -vda" gvm; then
+if ! su --command "GVM_CERTIFICATE_SECPARAM=high gvm-manage-certs -vda" gvm; then
   echo "Failed to generate/import GVM certificates"
   exit 1
 fi
@@ -70,11 +74,12 @@ if ! su --command "gvmd --create-user=$username --password=$password" gvm; then
 fi
 
 echo "Start Greenbone Security Assistant (GSA)"
-if ! gsad --verbose --drop-privileges=gvm --no-redirect --mlisten=127.0.0.1 --mport 9390 -p 9392 --listen 0.0.0.0; then
+if ! gsad --verbose --gnutls-priorities="$tls_ciphers" --ssl-certificate="$ssl_certificate" --ssl-private-key="$ssl_private_key" --drop-privileges=gvm --no-redirect --mlisten=127.0.0.1 --mport=9390 --port=9392 --listen=0.0.0.0; then
   echo "Failed to start Greenbone Security Assistant (GSA)"
   exit 1
 fi
 chown --verbose gvm: /var/log/gvm/*
+chown --verbose gvm: /usr/local/var/log/gvm/* # <-- this might be removed in the future
 
 # Set GVM feed import owner
 while read -r name uid; do
@@ -112,4 +117,4 @@ echo "Starting cron to ensure continued up-to-date NVTs"
 cron
 
 echo "Start monitoring logs"
-tail --follow /var/log/gvm/*
+tail --follow /var/log/gvm/* /usr/local/var/log/gvm/* # <-- /usr/local might be depricated in the future
