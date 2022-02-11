@@ -144,6 +144,12 @@ RUN apt-get install --assume-yes \
         haveged \
         xml-twig-tools
 
+# Prerequisites for Optional Features
+RUN apt-get install --assume-yes \
+        texlive-latex-base \
+        xsltproc \
+        xml-twig-tools
+
 RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/downloads && \
         wget --output-document /root/downloads/gvmd.tar.gz https://github.com/greenbone/gvmd/archive/v"$gvmd_version".tar.gz && \
         wget --output-document /root/downloads/gvmd.tar.gz.asc https://github.com/greenbone/gvmd/releases/download/v"$gvmd_version"/gvmd-"$gvmd_version".tar.gz.asc && \
