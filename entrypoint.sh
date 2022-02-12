@@ -45,8 +45,7 @@ fi
 
 echo "Generate/import GVM certificates"
 if ! su --command "GVM_CERTIFICATE_SECPARAM=high gvm-manage-certs -vda" gvm; then
-  echo "Failed to generate/import GVM certificates"
-  exit 1
+  echo "Certificate already exists, skipping"
 fi
 
 echo "Start Greenbone Vulnerability Manager (GVM)"
