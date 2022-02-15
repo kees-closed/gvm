@@ -1,7 +1,6 @@
 FROM debian:stable-slim
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
-ENV TZ="Europe/Amsterdam"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH

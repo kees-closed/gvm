@@ -7,7 +7,6 @@ log_level="${log_level:-INFO}"
 ssl_certificate="${ssl_certificate:-/var/lib/gvm/CA/servercert.pem}"
 ssl_private_key="${ssl_private_key:-/var/lib/gvm/private/CA/serverkey.pem}"
 tls_ciphers="${tls_ciphers:-SECURE128:-AES-128-CBC:-CAMELLIA-128-CBC:-VERS-SSL3.0:-VERS-TLS1.0:-VERS-TLS1.1}"
-export TZ="${TZ:-Europe/Amsterdam}"
 
 echo "Start databases"
 service redis-server start
@@ -21,6 +20,10 @@ su --command "psql --echo-all --dbname=gvmd --command='GRANT dba TO gvm;'" postg
 su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"uuid-ossp\";'" postgres
 su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"pgcrypto\";'" postgres
 
+if [[ -f /var/lib/gvm/feed-update.lock ]]; then
+  echo "Remove feed update lock file"
+  rm --verbose /var/lib/gvm/feed-update.lock
+fi
 if [[ -z $initial_nvt_sync ]]; then
   echo "Start Greenbone feed sync in the background"
   /etc/cron.daily/greenbone-feed-sync &
