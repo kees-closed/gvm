@@ -1,7 +1,7 @@
 [![Docker Repository on Quay](https://quay.io/repository/keesdejong/gvm/status "Docker Repository on Quay")](https://quay.io/repository/keesdejong/gvm)
 
 # Greenbone Vulnerability Manager (GVM) - Source Edition 
-Run the container with the following command: `podman run -it --rm -p 9392:9392 -v gvm-sync:/var/lib/openvas -v gvm-data:/var/lib/gvm -v gvm-postgres:/var/lib/postgresql -v /etc/localtime:/etc/localtime:ro --cap-add=NET_RAW quay.io/keesdejong/gvm:latest`. Then wait for the `rsync` to finish (first run will take a while) and then open the following link in your browser: https://localhost:9392
+Run the container with the following command: `podman run --name=gvm -it --rm -p 9392:9392 -v openvas-data:/var/lib/openvas -v gvm-data:/var/lib/gvm -v gvm-database:/var/lib/postgresql -v /etc/localtime:/etc/localtime:ro --cap-add=NET_RAW quay.io/keesdejong/gvm:latest`. Then wait for the `rsync` to finish (first run will take a while) and then open the following link in your browser: https://localhost:9392
 
 Default credentials:
 * Username: admin
