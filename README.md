@@ -1,6 +1,8 @@
 [![Docker Repository on Quay](https://quay.io/repository/keesdejong/gvm/status "Docker Repository on Quay")](https://quay.io/repository/keesdejong/gvm)
 
 # Greenbone Vulnerability Manager (GVM) - Source Edition 
+This GVM installation is done to the letter of the [official documentation](https://greenbone.github.io/docs/) with some minor exceptions due to undocumented steps (e.g. creating folders, setting permissions).
+
 Run the container with the following command: `podman run --name=gvm -it --rm -p 9392:9392 -v openvas-data:/var/lib/openvas -v gvm-data:/var/lib/gvm -v gvm-database:/var/lib/postgresql -v /etc/localtime:/etc/localtime:ro --cap-add=NET_RAW quay.io/keesdejong/gvm:latest`. Then wait for the `rsync` to finish (first run will take a while) and then open the following link in your browser: https://localhost:9392
 
 Default credentials:
