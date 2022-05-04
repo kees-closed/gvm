@@ -10,14 +10,13 @@ ENV openvas_scanner_version="21.4.4"
 ENV ospd_openvas_version="21.4.4"
 ENV gvmd_version="21.4.5"
 ENV gsa_version="21.4.4"
-#ENV nodejs_version=node_14.x
+ENV gsad_version="21.4.4"
 ENV nodejs_keyring=/usr/share/keyrings/nodesource.gpg
 ENV greenbone_fingerprint="8AE4BE429B60A59B311C2E739823FAA60ED1E580"
 ENV install_prefix="/usr/local"
 
-RUN useradd --system --no-create-home --user-group --shell /usr/sbin/nologin gvm
+RUN useradd --system --user-group gvm
 
-# Add 3rd party repos
 # Install dependencies to include Greenbone GPG key
 RUN apt-get update && apt-get install --assume-yes \
         build-essential \
@@ -29,9 +28,6 @@ RUN apt-get update && apt-get install --assume-yes \
         gnupg && \
         curl https://www.greenbone.net/GBCommunitySigningKey.asc | gpg --import - && \
         echo -e "5\ny\n" | gpg --no-tty --command-fd 0 --expert --edit-key "$greenbone_fingerprint" trust
-# Nodejs needed for GSA
-#RUN curl --fail --show-error --location https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor | tee "$nodejs_keyring" && \
-#        . /etc/os-release; echo "deb [signed-by=$nodejs_keyring] https://deb.nodesource.com/$nodejs_version $VERSION_CODENAME main" | tee /etc/apt/sources.list.d/nodesource.list
 
 # Update software
 RUN apt-get update && apt-get upgrade --assume-yes
@@ -65,7 +61,7 @@ RUN mkdir --verbose --parents /root/sources/gvm-libs-"$gvm_libs_version"/build /
         tar --verbose --extract --file /root/downloads/gvm-libs.tar.gz --directory /root/sources/ && \
         cd /root/sources/gvm-libs-"$gvm_libs_version"/build && \
         cmake -DBUILD_TESTS=ON \
-                -DCMAKE_INSTALL_PREFIX=$install_prefix \
+                -DCMAKE_INSTALL_PREFIX="$install_prefix" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DSYSCONFDIR=/etc \
                 -DLOCALSTATEDIR=/var \
@@ -121,7 +117,7 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
         tar --verbose --extract --file /root/downloads/gvmd.tar.gz --directory /root/sources/ && \
         cd /root/sources/gvmd-"$gvmd_version"/build && \
         cmake -DBUILD_TESTS=ON \
-                -DCMAKE_INSTALL_PREFIX=$install_prefix \
+                -DCMAKE_INSTALL_PREFIX="$install_prefix" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DLOCALSTATEDIR=/var \
                 -DSYSCONFDIR=/etc \
@@ -135,12 +131,9 @@ RUN mkdir --verbose --parents /root/sources/gvmd-"$gvmd_version"/build /root/dow
                 .. && \
         make tests && \
         make install && \
-        #chown --verbose gvm:gvm /run/gvm && \
-        #chown --verbose --recursive gvm:gvm /var/lib/gvm && \
-        #chown --verbose --recursive gvm:gvm /var/log/gvm && \
         rm --verbose --recursive --force /root/sources /root/downloads
 
-# Build GSA
+# Build gsa
 RUN apt-get install --assume-yes \
         nodejs \
         yarnpkg
@@ -155,7 +148,39 @@ RUN mkdir --verbose --parents /root/sources/gsa-"$gsa_version" /root/downloads &
         tar --verbose --extract --file /root/downloads/gsa.tar.gz --directory /root/sources/ && \
         cd /root/sources/gsa-"$gsa_version" && \
         yarnpkg && \
-        yarnpkg build
+        yarnpkg build && \
+        yarnpkg install && \
+        mkdir --verbose --parents "$install_prefix"/share/gvm/gsad/web && \
+        cp --verbose --recursive build/* "$install_prefix"/share/gvm/gsad/web/ && \
+        rm --verbose --recursive --force /root/sources /root/downloads
+
+# Build gsad
+RUN apt-get install --assume-yes \
+        libmicrohttpd-dev \
+        libxml2-dev \
+        libglib2.0-dev \
+        libgnutls28-dev
+
+RUN mkdir --verbose --parents /root/sources/gsad-"$gsad_version"/build /root/downloads && \
+        curl --location https://github.com/greenbone/gsad/archive/v"$gsad_version".tar.gz --output /root/downloads/gsad.tar.gz && \
+        curl --location https://github.com/greenbone/gsad/releases/download/v"$gsad_version"/gsad-"$gsad_version".tar.gz.asc --output /root/downloads/gsad.tar.gz.asc && \
+        if ! gpg --verify /root/downloads/gsad.tar.gz.asc; then \
+          echo "GPG signature check failed"; \
+          exit 1; \
+        fi && \
+        tar --verbose --extract --file /root/downloads/gsad.tar.gz --directory /root/sources/ && \
+        cd /root/sources/gsad-"$gsad_version"/build && \
+        cmake \
+                -DCMAKE_INSTALL_PREFIX="$install_prefix" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DSYSCONFDIR=/etc \
+                -DLOCALSTATEDIR=/var \
+                -DGVMD_RUN_DIR=/run/gvmd \
+                -DGSAD_RUN_DIR=/run/gsad \
+                -DLOGROTATE_DIR=/etc/logrotate.d \
+                .. && \
+        make install && \
+        rm --verbose --recursive --force /root/sources /root/downloads
 
 # Build openvas-scanner
 RUN apt-get install --assume-yes \
@@ -182,7 +207,7 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         tar --verbose --extract --file /root/downloads/openvas-scanner.tar.gz --directory /root/sources/ && \
         cd /root/sources/openvas-scanner-"$openvas_scanner_version"/build && \
         cmake -DBUILD_TESTS=ON \
-                -DCMAKE_INSTALL_PREFIX=$install_prefix \
+                -DCMAKE_INSTALL_PREFIX="$install_prefix" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DSYSCONFDIR=/etc \
                 -DLOCALSTATEDIR=/var \
@@ -194,14 +219,10 @@ RUN mkdir --verbose --parents /root/sources/openvas-scanner-"$openvas_scanner_ve
         sed --in-place "s/redis-openvas/redis/g" /root/sources/openvas-scanner-"$openvas_scanner_version"/config/redis-openvas.conf && \
         cp --verbose /root/sources/openvas-scanner-"$openvas_scanner_version"/config/redis-openvas.conf /etc/redis/redis.conf && \
         chown --verbose redis:redis /etc/redis/redis.conf && \
-        #chmod --verbose 640 /etc/redis/redis.conf && \
         echo "db_address = /run/redis/redis.sock" >> /etc/openvas/openvas.conf && \
-        #sed --in-place "s,OPENVAS_FEED_LOCK_PATH=\"/var/run/feed-update.lock\",OPENVAS_FEED_LOCK_PATH=\"/tmp/feed-update.lock\",g" /usr/local/bin/greenbone-nvt-sync && \
-        #chown --verbose --recursive gvm:gvm /usr/local/share/openvas && \
-        #chown --verbose --recursive gvm:gvm /var/lib/openvas && \
         rm --verbose --recursive --force /root/sources /root/downloads
 
-# Build ospd (ospd got merged into ospd-openvas, but maybe in version 21.4.4?)
+# Build spd
 RUN apt-get install --assume-yes \
         python3-paramiko \
         python3-lxml \
@@ -212,29 +233,29 @@ RUN apt-get install --assume-yes \
 RUN python3 -m pip install gvm-tools
 
 # Adjusting permissions
-RUN chown -R gvm:gvm /var/lib/gvm
-RUN chown -R gvm:gvm /var/lib/openvas
-RUN chown -R gvm:gvm /var/log/gvm
-RUN chown -R gvm:gvm /run/gvmd
-#RUN chown -R gvm:gvm /run/gsad
-#RUN chown -R gvm:gvm /run/ospd
+RUN chown --verbose --recursive gvm:gvm /var/lib/gvm
+RUN chown --verbose --recursive gvm:gvm /var/lib/openvas
+RUN chown --verbose --recursive gvm:gvm /var/log/gvm
+RUN chown --verbose --recursive gvm:gvm /run/gvmd
+RUN chown --verbose --recursive gvm:gvm /run/gsad
+#RUN chown --verbose --recursive gvm:gvm /run/ospd not created by build
 
-RUN chmod -R g+srw /var/lib/gvm
-RUN chmod -R g+srw /var/lib/openvas
-RUN chmod -R g+srw /var/log/gvm
+RUN chmod --verbose --recursive g+srw /var/lib/gvm
+RUN chmod --verbose --recursive g+srw /var/lib/openvas
+RUN chmod --verbose --recursive g+srw /var/log/gvm
 
-RUN chown gvm:gvm /usr/local/sbin/gvmd
-RUN chmod 6750 /usr/local/sbin/gvmd
+RUN chown gvm:gvm "$install_prefix"/sbin/gvmd
+RUN chmod 6750 "$install_prefix"/sbin/gvmd
 
-RUN chown gvm:gvm /usr/local/bin/greenbone-nvt-sync
-RUN chmod 740 /usr/local/sbin/greenbone-feed-sync
-RUN chown gvm:gvm /usr/local/sbin/greenbone-*-sync
-RUN chmod 740 /usr/local/sbin/greenbone-*-sync
+RUN chown gvm:gvm "$install_prefix"/bin/greenbone-nvt-sync
+RUN chmod 740 "$install_prefix"/sbin/greenbone-feed-sync
+RUN chown gvm:gvm "$install_prefix"/sbin/greenbone-*-sync
+RUN chmod 740 "$install_prefix"/sbin/greenbone-*-sync
 
 RUN ldconfig
 
 COPY entrypoint.sh /entrypoint.sh
 COPY greenbone-feed-sync /etc/cron.daily/greenbone-feed-sync
 COPY logrotate-gvm /etc/logrotate.d/gvm
-#ENTRYPOINT /entrypoint.sh
+ENTRYPOINT /entrypoint.sh
 EXPOSE 9392/tcp

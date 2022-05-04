@@ -2,7 +2,7 @@
 
 username="admin"
 password="${password:-admin}"
-ospd_socket="${ospd_socket:-/run/ospd/ospd.sock}"
+ospd_socket="${ospd_socket:-/run/ospd/ospd-openvas.sock}"
 log_level="${log_level:-INFO}"
 ssl_certificate="${ssl_certificate:-/var/lib/gvm/CA/servercert.pem}"
 ssl_private_key="${ssl_private_key:-/var/lib/gvm/private/CA/serverkey.pem}"
@@ -20,20 +20,21 @@ su --command "psql --echo-all --dbname=gvmd --command='GRANT dba TO gvm;'" postg
 su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"uuid-ossp\";'" postgres
 su --command "psql --echo-all --dbname=gvmd --command='CREATE EXTENSION \"pgcrypto\";'" postgres
 
-if [[ -f /var/lib/gvm/feed-update.lock ]]; then
+if [[ -f /var/lib/openvas/feed-update.lock ]]; then
   echo "Remove feed update lock file"
-  rm --verbose /var/lib/gvm/feed-update.lock
+  rm --verbose /var/lib/openvas/feed-update.lock
 fi
 if [[ -z $initial_nvt_sync ]]; then
   echo "Start Greenbone feed sync in the background"
   /etc/cron.daily/greenbone-feed-sync &
   echo "Wait for the plugin_feed_info.inc file to be synced"
   until [[ -f /var/lib/openvas/plugins/plugin_feed_info.inc ]]; do
-    file_count="/var/lib/openvas/plugins/*"
-    echo "Found ${#file_count[*]} files so far"
     sleep 60
+    file_count=(/var/lib/openvas/plugins/*)
+    echo "Found ${#file_count[*]} files so far..."
     continue
   done
+  echo "Synced the plugin_feed_info.inc file"
   echo "Update NVT (Network Vulnerability Tests) info into redis store from NVT files"
   if ! openvas --update-vt-info; then
     echo "NVT update failed"
@@ -83,6 +84,7 @@ if ! gsad --verbose --gnutls-priorities="$tls_ciphers" --ssl-certificate="$ssl_c
   echo "Failed to start Greenbone Security Assistant (GSA)"
   exit 1
 fi
+chown --verbose gvm:gvm /var/log/gvm/gsad.log
 
 # Set GVM feed import owner
 while read -r name uid; do
@@ -120,34 +122,4 @@ echo "Starting cron to ensure continued up-to-date NVTs"
 cron
 
 echo "Start monitoring logs"
-tail --follow /var/log/gvm/* /usr/local/var/log/gvm/* # <-- /usr/local might be depricated in the future
-#!/bin/bash
-
-# Postfix bit (in progress)
-#echo "Verify mandatory variables"
-#mydomain=""
-#
-#
-#echo "Setting up Postfix relay"
-#postconf -ev compatibility_level = 2
-#postconf -ev inet_interfaces = loopback-only
-#postconf -ev inet_protocols = all
-#postconf -ev masquerade_domains = $mydomain
-#postconf -ev mydomain = $mydomain
-#postconf -ev myhostname = ws1
-#postconf -ev mynetworks = localhost # should be docker network?
-#postconf -ev myorigin = $mydomain
-#postconf -ev relayhost = [mail.$mydomain]:submission
-#postconf -ev smtp_dns_support_level = dnssec
-#postconf -ev smtp_generic_maps = hash:$config_directory/smtp_generic
-#postconf -ev smtp_sasl_auth_enable = yes
-#postconf -ev smtp_sasl_password_maps = hash:$config_directory/sasl_passwd
-#postconf -ev smtp_sasl_security_options = noanonymous
-#postconf -ev smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt # double check
-#postconf -ev smtp_tls_loglevel = 1
-#postconf -ev smtp_tls_mandatory_ciphers = high
-#postconf -ev smtp_tls_mandatory_protocols = >=TLSv1.3
-#postconf -ev smtp_tls_protocols = >=TLSv1.3
-#postconf -ev smtp_tls_security_level = dane
-#postconf -ev smtp_use_tls = yes
-#postconf -ev smtpd_banner = $myhostname ESMTP
+tail --follow /var/log/gvm/*
