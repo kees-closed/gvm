@@ -67,6 +67,7 @@ fi
 
 echo "Waiting until the service is available"
 until su --command "gvmd --get-users 1>/dev/null" gvm; do
+  sleep 5
   continue
 done
 
