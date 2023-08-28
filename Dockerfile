@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM debian:bullseye-slim
 MAINTAINER Kees de Jong <kees.dejong+dev@neobits.nl>
 
 ENV DEBIAN_FRONTEND=noninteractive
