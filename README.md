@@ -1,5 +1,9 @@
 [![Docker Repository on Quay](https://quay.io/repository/keesdejong/gvm/status "Docker Repository on Quay")](https://quay.io/repository/keesdejong/gvm)
 
+Greenbone has released [official community containers](https://community.greenbone.net/greenbone-community-containers/), therefore this repository is not maintained anymore.
+
+---
+
 # Greenbone Vulnerability Manager (GVM) - Source Edition 
 This GVM installation is done to the letter of the [official documentation](https://greenbone.github.io/docs/) with some minor exceptions due to undocumented steps (e.g. creating folders, setting permissions).
 
